@@ -15,13 +15,13 @@ router.get ('/', function(req,res,next) {
 });
 
 router.get ('/crawler', function(req,res,next) {
-  // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
-  // 라면 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=16228187&15main_16_02
   const url = req.query.id;
-  getProductHref(url, 20);
+  getProductHref(url, 30);
 
   res.status(200).json("Test Carwler at " + url);
 });
+// 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
+// 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
 
 async function getProductHref(url , pageLimit){
     var i;
@@ -63,6 +63,7 @@ async function getSingleProductInfo(url){
     const page = await browser.newPage();
 
     await page.goto(url);
+    try{
     //
     await page.waitForSelector("h3.prod_tit", {timeout: 10000});
     const title = await page.evaluate(() => {
@@ -94,8 +95,10 @@ async function getSingleProductInfo(url){
     });
 
     console.log("Crawling done at " + url);
-    //console.log(title,infos, priceRes);
-    console.log(title);
+    console.log(title,infos, priceRes);
+  }catch(e){
+      console.log("Crawling failed at " + url);
+  }
 
     await browser.close();
 }
