@@ -18,32 +18,40 @@ router.get ('/crawler', function(req,res,next) {
   // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
   // 라면 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=16228187&15main_16_02
   const url = req.query.id;
-  getProductHref(url);
+  getProductHref(url, 20);
 
   res.status(200).json("Test Carwler at " + url);
 });
 
-async function getProductHref(url){
+async function getProductHref(url , pageLimit){
+    var i;
 
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
     await page.goto(url);
 
-    await page.waitForSelector("a[name='productName']", {timeout: 10000});
-    const result = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll("a[name='productName']"));
-        return anchors.map(anchor => anchor.getAttribute('href'));
-    });
-    productElements.push(...result);
-    //console.log(result_.join('\n'));
+    for(i = 1;i <= pageLimit;i++){
+      await page.evaluate(() => {
+        movePage(this.i);
+        return false;
+      });
+
+      await page.waitForSelector("a[name='productName']", {timeout: 10000});
+      const result = await page.evaluate(() => {
+          const anchors = Array.from(document.querySelectorAll("a[name='productName']"));
+          return anchors.map(anchor => anchor.getAttribute('href'));
+      });
+      productElements.push(...result);
+      console.log("Crawling Page " + i + " / " + pageLimit);
+    }
+
     await browser.close();
 
     console.log("Crawling done at " + url);
-    console.log(productElements);
+    console.log(productElements.length + "items");
 
     console.log("Queue crawling start");
-    var i;
     for(i = 0;i < productElements.length;i++){
         await getSingleProductInfo(productElements[i]);
     }
@@ -86,7 +94,8 @@ async function getSingleProductInfo(url){
     });
 
     console.log("Crawling done at " + url);
-    console.log(title,infos, priceRes);
+    //console.log(title,infos, priceRes);
+    console.log(title);
 
     await browser.close();
 }
