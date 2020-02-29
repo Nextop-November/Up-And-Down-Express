@@ -52,10 +52,28 @@ async function getSingleProductInfo(url){
     const page = await browser.newPage();
 
     await page.goto(url);
-    
-    await page.waitForSelector(".lowest_price a.lwst_prc", {timeout: 10000});
-    const result = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll(".lowest_price a.lwst_prc"));
+    //
+    await page.waitForSelector("h3.prod_tit", {timeout: 10000});
+    const title = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll("h3.prod_tit"));
+        return anchors.map(anchor => {
+          const title =  anchor.textContent;
+          return {title};
+        });;
+    });
+    //
+    await page.waitForSelector("div.items", {timeout: 10000});
+    const infos = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll("div.items"));
+        return anchors.map(anchor => {
+          const infos =  anchor.textContent;
+          return {infos};
+        });;
+    });
+    //await page.waitForSelector(".lowest_price a.lwst_prc", {timeout: 10000});
+    await page.waitForSelector("a.lwst_prc", {timeout: 10000});
+    const priceRes = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll("a.lwst_prc"));
         return anchors.map(anchor => {
           const price =  anchor.textContent;
           const url = anchor.getAttribute('href');
@@ -63,8 +81,9 @@ async function getSingleProductInfo(url){
           return {price,url};
         });;
     });
+
     console.log("Crawling done at " + url);
-    console.log(result);
+    console.log(title,infos, priceRes);
 
     await browser.close();
 }
