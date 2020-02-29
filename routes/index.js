@@ -15,9 +15,12 @@ router.get ('/', function(req,res,next) {
 });
 
 router.get ('/crawler', function(req,res,next) {
-  getProductHref('http://prod.danawa.com/list/?cate=112758');
+  // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
+  // 라면 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=16228187&15main_16_02
+  const url = req.query.id;
+  getProductHref(url);
 
-  res.status(200).json("Test Carwler");
+  res.status(200).json("Test Carwler at " + url);
 });
 
 async function getProductHref(url){
