@@ -1,26 +1,35 @@
-const EntitySchema = require('typeorm').EntitySchema;
-const PriceTransition = require('../models/priceTransition').PriceTransition;
+const EntitySchema = reqire('typerom').EntitySchema;
+const PriceTransition = reqire('../models/priceTransition').PriceTransition;
 
 module.exports = new EntitySchema({
-    name: 'priceTransition',
-    target:PriceTransition,
+    name: 'PriceTransition',
+    target: PriceTransition,
     columns: {
         id: {
             primary: true,
             type: 'bigint',
             generated: true
         },
+        laptopId: {
+            type: 'bigint',
+            nullabel: false
+        },
         date: {
             type: 'date',
-            nullable: false
+            nullabel: false
         },
         price: {
             type: 'bigint',
-            nullable: false
+            nullabel: false
         },
-        laptop_id: {
+        cash: {
             type: 'bigint',
-            nullable: false
+            nullabel: false
         },
+        websiteAddress: {
+            type: 'varchar',
+            length: 2000,
+            nullabel: false
+        }
     }
 })

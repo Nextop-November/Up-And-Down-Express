@@ -1,23 +1,23 @@
 const EntitySchema = require('typeorm').EntitySchema;
-const Laptop = require('../models/laptop').Laptop;
+const Category = require('../models/category').Category;
 
 module.exports = new EntitySchema({
-    name: 'laptop',
-    target: Laptop,
+    name: 'category',
+    target:category,
     columns: {
         id: {
             primary: true,
             type: 'bigint',
             generated: true
         },
+        legendId: {
+            type: 'bigint',
+            nullable: false,
+        },
         name: {
             type: 'varchar',
-            length: 15,
-            nullable: false
-        },
-        releaseDate: {
-            type: 'date',
-            nullable: false
-        },
+            length: 10,
+            nullable: false,
+        }
     }
 })

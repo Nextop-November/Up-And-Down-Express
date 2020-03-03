@@ -1,9 +1,11 @@
-class PriceTransition{
-    constructor(id,date,price,laptop_id) {
+class PriceTransition {
+    constructor(id,laptopId,date,price,cash,websiteAdress){
         this.id = id;
+        this.laptopId = laptopId;
         this.date = date;
         this.price = price;
-        this.laptop_id = laptop_id;
+        this.cash = cash;
+        this.websiteAdress = websiteAdress;
     }
 }
 
