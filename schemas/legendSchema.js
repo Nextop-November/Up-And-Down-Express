@@ -10,7 +10,7 @@ module.exports = new EntitySchema({
             type: 'bigint',
             generated: true
         },
-        lebel: {
+        label: {
             type: 'varchar',
             length: 10,
             nullabel: false
