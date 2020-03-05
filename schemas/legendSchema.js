@@ -1,5 +1,5 @@
-const EntitySchema = reqire('typerom').EntitySchema;
-const Legend = reqire('../models/legend').Legend;
+const EntitySchema = require('typeorm').EntitySchema;
+const Legend = require('../models/legend').Legend;
 
 module.exports = new EntitySchema({
     name: 'Legend',

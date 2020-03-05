@@ -1,7 +1,7 @@
 class Category{
     constructor(id,legendId,name) {
         this.id = id;
-        this.legendId = legenId;
+        this.legenId = legendId;
         this.name = name;
     }
 }

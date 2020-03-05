@@ -1,5 +1,5 @@
-const EntitySchema = reqire('typerom').EntitySchema;
-const CategoryMap = reqire('../models/categoryMap').CategoryMap;
+const EntitySchema = require('typeorm').EntitySchema;
+const CategoryMap = require('../models/categoryMap').CategoryMap;
 
 module.exports = new EntitySchema({
     name: 'CategoryMap',

@@ -1,5 +1,5 @@
-const EntitySchema = reqire('typerom').EntitySchema;
-const PriceTransition = reqire('../models/priceTransition').PriceTransition;
+const EntitySchema = require('typeorm').EntitySchema;
+const PriceTransition = require('../models/priceTransition').PriceTransition;
 
 module.exports = new EntitySchema({
     name: 'PriceTransition',

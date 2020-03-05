@@ -3,7 +3,7 @@ const Category = require('../models/category').Category;
 
 module.exports = new EntitySchema({
     name: 'category',
-    target:category,
+    target:Category,
     columns: {
         id: {
             primary: true,
