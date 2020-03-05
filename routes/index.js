@@ -4,6 +4,8 @@ const { getConnection } = require('typeorm');
 const Laptop = require('../schemas/laptopSchem');
 const puppeteer = require('puppeteer');
 
+let legends = [];
+let categories = [];
 let productElements = [];
 
 router.get ('/', function(req,res,next) {
@@ -24,6 +26,8 @@ router.get ('/crawler', function(req,res,next) {
 // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
 
 async function getProductHref(url , pageLimit){
+  await getLegends(url);
+
     var i;
 
     const browser = await puppeteer.launch();
@@ -56,6 +60,27 @@ async function getProductHref(url , pageLimit){
         await getSingleProductInfo(productElements[i]);
     }
     console.log("Queue crawling finished");
+}
+
+async function getLegends(url){
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  await page.goto(url);
+
+  await page.waitForSelector("dt.item_dt", {timeout: 10000});
+  const result = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll("dt.item_dt"));
+      return anchors.map(anchor => {
+        const tmp =  anchor.textContent.toString().split('\r\n');
+        const content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+        content.trim();
+        return {content};
+      });;
+  });
+  legends.push(...result);
+
+  console.log(legends);
 }
 
 async function getSingleProductInfo(url){
