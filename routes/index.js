@@ -4,8 +4,7 @@ const { getConnection } = require('typeorm');
 const Laptop = require('../schemas/laptopSchem');
 const puppeteer = require('puppeteer');
 
-let legends = [];
-let categories = [];
+let legendCatalog = [];
 let productElements = [];
 
 router.get ('/', function(req,res,next) {
@@ -68,19 +67,31 @@ async function getLegends(url){
 
   await page.goto(url);
 
-  await page.waitForSelector("dt.item_dt", {timeout: 10000});
+  await page.waitForSelector("dl.spec_item", {timeout: 10000});
   const result = await page.evaluate(() => {
-      const anchors = Array.from(document.querySelectorAll("dt.item_dt"));
+    const anchors = Array.from(document.querySelectorAll("dl.spec_item"));
+      //const item_dt = Array.from(document.querySelectorAll("dt.item_dt"));
+     // const sub_item = Array.from(document.querySelectorAll("li.sub_item"));
+      //anchors.push(item_dt);
+     // anchors.push(sub_item);
+      
+      //return anchors.map(anchor => anchor.textContent);
       return anchors.map(anchor => {
-        const tmp =  anchor.textContent.toString().split('\r\n');
-        const content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
-        content.trim();
-        return {content};
+        const item_dt =  anchor.querySelectorAll('.item_dt').textContent;
+        //anchor.getElementsByClassName
+        const sub_items = anchor.querySelectorAll('.sub_item').textContent;
+        const num = anchor.childElementCount;
+        const dl = [];
+        dl.push(item_dt);
+        dl.push(sub_items);
+        dl.push(num);
+        return {dl};
       });;
   });
-  legends.push(...result);
+  legendCatalog.push(...result);
 
-  console.log(legends);
+  console.log(legendCatalog);
+  console.log("Crawling done at " + url);
 }
 
 async function getSingleProductInfo(url){
