@@ -17,7 +17,8 @@ router.get ('/', function(req,res,next) {
 
 router.get ('/crawler', function(req,res,next) {
   const url = req.query.id;
-  getProductHref(url, 30);
+  getLegends(url);
+  //getProductHref(url, 30);
 
   res.status(200).json("Test Carwler at " + url);
 });
@@ -25,8 +26,6 @@ router.get ('/crawler', function(req,res,next) {
 // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
 
 async function getProductHref(url , pageLimit){
-  await getLegends(url);
-
     var i;
 
     const browser = await puppeteer.launch();
@@ -69,29 +68,39 @@ async function getLegends(url){
 
   await page.waitForSelector("dl.spec_item", {timeout: 10000});
   const result = await page.evaluate(() => {
-    const anchors = Array.from(document.querySelectorAll("dl.spec_item"));
-      //const item_dt = Array.from(document.querySelectorAll("dt.item_dt"));
-     // const sub_item = Array.from(document.querySelectorAll("li.sub_item"));
-      //anchors.push(item_dt);
-     // anchors.push(sub_item);
+      const anchors = [];
+      //("dl dt.item_dt a.view_dic")
+      const item_dt = Array.from(document.querySelectorAll("dl dt.item_dt"));
+      const item_dt_ = Array.from(document.querySelectorAll("dl dt.item_dt a.view_dic"));
+      const sub_item = Array.from(document.querySelectorAll("dl li.sub_item"));
       
-      //return anchors.map(anchor => anchor.textContent);
-      return anchors.map(anchor => {
-        const item_dt =  anchor.querySelectorAll('.item_dt').textContent;
-        //anchor.getElementsByClassName
-        const sub_items = anchor.querySelectorAll('.sub_item').textContent;
-        const num = anchor.childElementCount;
-        const dl = [];
-        dl.push(item_dt);
-        dl.push(sub_items);
-        dl.push(num);
-        return {dl};
-      });;
+      anchors.push(item_dt.map(anchor => {
+        var tmp =  anchor.firstChild.textContent.toString().split('\r\n');
+        var content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+        return {content};
+      }));
+
+      anchors.push(item_dt_.map(anchor => {
+        var tmp =  anchor.textContent.toString().split('\r\n');
+        var content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+        return {content};
+      }));
+
+      anchors.push(sub_item.map(anchor => {
+        const tmp =  anchor.textContent.toString().split('\r\n');
+        const content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+
+        return {content};
+      }));
+
+      return anchors;
   });
   legendCatalog.push(...result);
 
   console.log(legendCatalog);
   console.log("Crawling done at " + url);
+  await browser.close();
+  getProductHref(url,30);
 }
 
 async function getSingleProductInfo(url){
