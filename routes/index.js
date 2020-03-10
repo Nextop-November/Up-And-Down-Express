@@ -3,6 +3,7 @@ var router = express.Router();
 const { getConnection } = require('typeorm');
 const Laptop = require('../schemas/laptopSchem');
 const puppeteer = require('puppeteer');
+const Legend = require('../models/legend').Legend;
 
 let legendCatalog = [];
 let productElements = [];
@@ -100,6 +101,10 @@ async function getLegends(url){
   console.log(legendCatalog);
   console.log("Crawling done at " + url);
   await browser.close();
+
+  await insertLegend(0);
+  await insertLegend(1);
+
   getProductHref(url,30);
 }
 
@@ -146,6 +151,33 @@ async function getSingleProductInfo(url){
   }
 
     await browser.close();
+}
+
+// 0, 1 : legend
+async function insertLegend(level){
+  for(i = 0;i < legendCatalog[level].length;i++){
+    //console.log(legendCatalog[level][i].content + " " + i);
+
+    if(legendCatalog[level][i].content == '')
+      continue;
+
+    const inspectionData = await getConnection()
+    .getRepository(Legend)
+    .createQueryBuilder("legend")
+    .where("legend.label = :tmp", { tmp: legendCatalog[level][i].content })
+    .getOne();
+
+    if(inspectionData == null){
+      await getConnection()
+      .createQueryBuilder()
+      .insert()
+      .into(Legend)
+      .values([
+          { label: legendCatalog[level][i].content }
+      ])
+      .execute();
+    }
+  }
 }
 
 module.exports = router;
