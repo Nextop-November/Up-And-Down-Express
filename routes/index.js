@@ -4,6 +4,7 @@ const { getConnection } = require('typeorm');
 const Laptop = require('../schemas/laptopSchem');
 const puppeteer = require('puppeteer');
 const Legend = require('../models/legend').Legend;
+const Category = require('../models/category').Category;
 
 let legendCatalog = [];
 let productElements = [];
@@ -67,32 +68,46 @@ async function getLegends(url){
 
   await page.goto(url);
 
+  await page.waitForSelector(".btn_all_opt", {timeout: 10000});
+  await page.click('.btn_all_opt');
+  //버튼 클릭해도 반영이 안되는 오류 수정필요
+  console.log("Button Clicked");
+
   await page.waitForSelector("dl.spec_item", {timeout: 10000});
   const result = await page.evaluate(() => {
       const anchors = [];
+
       //("dl dt.item_dt a.view_dic")
-      const item_dt = Array.from(document.querySelectorAll("dl dt.item_dt"));
-      const item_dt_ = Array.from(document.querySelectorAll("dl dt.item_dt a.view_dic"));
-      const sub_item = Array.from(document.querySelectorAll("dl li.sub_item"));
-      
-      anchors.push(item_dt.map(anchor => {
-        var tmp =  anchor.firstChild.textContent.toString().split('\r\n');
-        var content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
-        return {content};
-      }));
+      const dl = Array.from(document.querySelectorAll("dl.spec_item"));
 
-      anchors.push(item_dt_.map(anchor => {
-        var tmp =  anchor.textContent.toString().split('\r\n');
-        var content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
-        return {content};
-      }));
+      for(i = 0;i < dl.length;i++){
+        const tmp = [];
 
-      anchors.push(sub_item.map(anchor => {
-        const tmp =  anchor.textContent.toString().split('\r\n');
-        const content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+        const item_dt = Array.from(dl[i].querySelectorAll("dt.item_dt"));
+        const item_dt_ = Array.from(dl[i].querySelectorAll("dt.item_dt a.view_dic"));
+        const sub_item = Array.from(dl[i].querySelectorAll("li.sub_item"));
 
-        return {content};
-      }));
+        tmp.push(item_dt.map(anchor => {
+          var tmp =  anchor.firstChild.textContent.toString().split('\r\n');
+          var content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+          return {content};
+        }));
+
+        tmp.push(item_dt_.map(anchor => {
+          var tmp =  anchor.textContent.toString().split('\r\n');
+          var content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+          return {content};
+        }));
+
+        tmp.push(sub_item.map(anchor => {
+          const tmp =  anchor.textContent.toString().split('\r\n');
+          const content = String(tmp).replace(/\t/g,'').replace(/\n/g,'').trim();
+  
+          return {content};
+        }));
+
+        anchors.push(...tmp);
+      }
 
       return anchors;
   });
@@ -102,8 +117,7 @@ async function getLegends(url){
   console.log("Crawling done at " + url);
   await browser.close();
 
-  await insertLegend(0);
-  await insertLegend(1);
+  await insertLegendCate();
 
   getProductHref(url,30);
 }
@@ -153,29 +167,93 @@ async function getSingleProductInfo(url){
     await browser.close();
 }
 
-// 0, 1 : legend
-async function insertLegend(level){
-  for(i = 0;i < legendCatalog[level].length;i++){
-    //console.log(legendCatalog[level][i].content + " " + i);
+async function insertLegendCate(){
 
-    if(legendCatalog[level][i].content == '')
+  for(i = 0;i < legendCatalog.length;i+=3){
+    
+    let legendEl = '';
+    let legendEl_ = '';
+
+    try{
+      legendEl = legendCatalog[i][0].content;
+      legendEl_ = legendCatalog[i + 1][0].content;
+    }
+    catch(e){
+    }
+
+    if(legendEl == '' && legendEl_ == '')
       continue;
+    
+      if(legendEl != ''){
+      const inspectionData = await getConnection()
+      .getRepository(Legend)
+      .createQueryBuilder("legend")
+      .where("legend.label = :tmp", { tmp: legendEl })
+      .getOne();
 
-    const inspectionData = await getConnection()
-    .getRepository(Legend)
-    .createQueryBuilder("legend")
-    .where("legend.label = :tmp", { tmp: legendCatalog[level][i].content })
-    .getOne();
+      if(inspectionData == null){
+        await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(Legend)
+        .values([
+            { label: legendEl }
+        ])
+        .execute();
+      }
+    }
+    else if(legendEl_ != ''){
+      legendEl = legendEl_;
 
-    if(inspectionData == null){
-      await getConnection()
-      .createQueryBuilder()
-      .insert()
-      .into(Legend)
-      .values([
-          { label: legendCatalog[level][i].content }
-      ])
-      .execute();
+      const inspectionData = await getConnection()
+      .getRepository(Legend)
+      .createQueryBuilder("legend")
+      .where("legend.label = :tmp", { tmp: legendEl_ })
+      .getOne();
+
+      if(inspectionData == null){
+        await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(Legend)
+        .values([
+            { label: legendEl_ }
+        ])
+        .execute();
+      }
+    }
+
+    let legendID = await getConnection()
+      .getRepository(Legend)
+      .createQueryBuilder("legend")
+      .where("legend.label = :tmp", { tmp: legendEl })
+      .select("legend.id")
+      .getOne();
+    legendID = parseInt(legendID.id);
+
+    for(j = 0;j < legendCatalog[i + 2].length;j++){
+      const tmpContent = legendCatalog[i + 2][j].content;
+
+      if(tmpContent == '')
+        continue;
+
+      const inspectionData = await getConnection()
+      .getRepository(Category)
+      .createQueryBuilder("category")
+      .where("category.name = :tmp", { tmp: tmpContent })
+      .getOne();
+
+      if(inspectionData == null){
+        await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(Category)
+        .values([
+          { legendId : legendID,
+            name: tmpContent }
+        ])
+        .execute();
+      }
     }
   }
 }

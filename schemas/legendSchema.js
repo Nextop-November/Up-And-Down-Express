@@ -12,7 +12,7 @@ module.exports = new EntitySchema({
         },
         label: {
             type: 'varchar',
-            length: 10,
+            length: 20,
             nullabel: false
         },
     }
