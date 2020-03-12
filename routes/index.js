@@ -5,6 +5,12 @@ const Laptop = require('../schemas/laptopSchem');
 const puppeteer = require('puppeteer');
 const Legend = require('../models/legend').Legend;
 const Category = require('../models/category').Category;
+var cron = require('node-cron');
+
+cron.schedule('0 0 0 * * *', () => {
+  console.log('Cron running : ' + (new Date()).toISOString().replace(/[^0-9]/g, ""));
+  getLegends("http://prod.danawa.com/list/?cate=112758");
+});
 
 let legendCatalog = [];
 let productElements = [];
@@ -18,13 +24,12 @@ router.get ('/', function(req,res,next) {
 });
 
 router.get ('/crawler', function(req,res,next) {
+  console.log('Start Crawling Manually');
   const url = req.query.id;
   getLegends(url);
-  //getProductHref(url, 30);
 
   res.status(200).json("Test Carwler at " + url);
 });
-// 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
 // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
 
 async function getProductHref(url , pageLimit){
@@ -70,14 +75,13 @@ async function getLegends(url){
 
   await page.waitForSelector(".btn_all_opt", {timeout: 10000});
   await page.click('.btn_all_opt');
-  //버튼 클릭해도 반영이 안되는 오류 수정필요
-  console.log("Button Clicked");
+
+  await sleep(1000);
 
   await page.waitForSelector("dl.spec_item", {timeout: 10000});
   const result = await page.evaluate(() => {
       const anchors = [];
 
-      //("dl dt.item_dt a.view_dic")
       const dl = Array.from(document.querySelectorAll("dl.spec_item"));
 
       for(i = 0;i < dl.length;i++){
@@ -120,51 +124,6 @@ async function getLegends(url){
   await insertLegendCate();
 
   getProductHref(url,30);
-}
-
-async function getSingleProductInfo(url){
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
-    await page.goto(url);
-    try{
-    //
-    await page.waitForSelector("h3.prod_tit", {timeout: 10000});
-    const title = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll("h3.prod_tit"));
-        return anchors.map(anchor => {
-          const title =  anchor.textContent;
-          return {title};
-        });;
-    });
-    //
-    await page.waitForSelector("div.items", {timeout: 10000});
-    const infos = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll("div.items"));
-        return anchors.map(anchor => {
-          const infos =  anchor.textContent;
-          return {infos};
-        });;
-    });
-    //await page.waitForSelector(".lowest_price a.lwst_prc", {timeout: 10000});
-    await page.waitForSelector("a.lwst_prc", {timeout: 10000});
-    const priceRes = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll("a.lwst_prc"));
-        return anchors.map(anchor => {
-          const price =  anchor.textContent;
-          const url = anchor.getAttribute('href');
-
-          return {price,url};
-        });;
-    });
-
-    console.log("Crawling done at " + url);
-    console.log(title,infos, priceRes);
-  }catch(e){
-      console.log("Crawling failed at " + url);
-  }
-
-    await browser.close();
 }
 
 async function insertLegendCate(){
@@ -256,6 +215,91 @@ async function insertLegendCate(){
       }
     }
   }
+}
+
+async function getProductHref(url , pageLimit){
+    var i;
+
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    await page.goto(url);
+
+    for(i = 1;i <= pageLimit;i++){
+      await page.evaluate(() => {
+        movePage(this.i);
+        return false;
+      });
+
+      await page.waitForSelector("a[name='productName']", {timeout: 10000});
+      const result = await page.evaluate(() => {
+          const anchors = Array.from(document.querySelectorAll("a[name='productName']"));
+          return anchors.map(anchor => anchor.getAttribute('href'));
+      });
+      productElements.push(...result);
+      console.log("Crawling Page " + i + " / " + pageLimit);
+    }
+
+    await browser.close();
+
+    console.log("Crawling done at " + url);
+    console.log(productElements.length + "items");
+
+    console.log("Queue crawling start");
+    for(i = 0;i < productElements.length;i++){
+        await getSingleProductInfo(productElements[i]);
+    }
+    console.log("Queue crawling finished");
+}
+
+async function getSingleProductInfo(url){
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    await page.goto(url);
+    try{
+    //
+    await page.waitForSelector("h3.prod_tit", {timeout: 10000});
+    const title = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll("h3.prod_tit"));
+        return anchors.map(anchor => {
+          const title =  anchor.textContent;
+          return {title};
+        });;
+    });
+    //
+    await page.waitForSelector("div.items", {timeout: 10000});
+    const infos = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll("div.items"));
+        return anchors.map(anchor => {
+          const infos =  anchor.textContent;
+          return {infos};
+        });;
+    });
+    //await page.waitForSelector(".lowest_price a.lwst_prc", {timeout: 10000});
+    await page.waitForSelector("a.lwst_prc", {timeout: 10000});
+    const priceRes = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll("a.lwst_prc"));
+        return anchors.map(anchor => {
+          const price =  anchor.textContent;
+          const url = anchor.getAttribute('href');
+
+          return {price,url};
+        });;
+    });
+
+    console.log("Crawling done at " + url);
+    console.log(title,infos, priceRes);
+  }catch(e){
+      console.log("Crawling failed at " + url);
+  }
+
+    await browser.close();
+}
+
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = router;
