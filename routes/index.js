@@ -27,45 +27,10 @@ router.get ('/crawler', function(req,res,next) {
   console.log('Start Crawling Manually');
   const url = req.query.id;
   getLegends(url);
-
+  // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
+  // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
   res.status(200).json("Test Carwler at " + url);
 });
-// 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
-
-async function getProductHref(url , pageLimit){
-    var i;
-
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
-    await page.goto(url);
-
-    for(i = 1;i <= pageLimit;i++){
-      await page.evaluate(() => {
-        movePage(this.i);
-        return false;
-      });
-
-      await page.waitForSelector("a[name='productName']", {timeout: 10000});
-      const result = await page.evaluate(() => {
-          const anchors = Array.from(document.querySelectorAll("a[name='productName']"));
-          return anchors.map(anchor => anchor.getAttribute('href'));
-      });
-      productElements.push(...result);
-      console.log("Crawling Page " + i + " / " + pageLimit);
-    }
-
-    await browser.close();
-
-    console.log("Crawling done at " + url);
-    console.log(productElements.length + "items");
-
-    console.log("Queue crawling start");
-    for(i = 0;i < productElements.length;i++){
-        await getSingleProductInfo(productElements[i]);
-    }
-    console.log("Queue crawling finished");
-}
 
 async function getLegends(url){
   const browser = await puppeteer.launch();
