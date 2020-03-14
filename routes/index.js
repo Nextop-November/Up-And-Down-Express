@@ -196,10 +196,13 @@ async function getProductHref(url , pageLimit){
     await page.goto(url);
 
     for(i = 1;i <= pageLimit;i++){
-      await page.evaluate(() => {
-        movePage(this.i);
-        return false;
-      });
+
+      const selector = "a[onclick='javascript:movePage(" + i + "); return false;']";
+      if(i != 1){
+        await page.waitForSelector(selector, {timeout: 10000});
+        await page.click(selector);
+        await sleep(1000);
+      }
 
       await page.waitForSelector("a[name='productName']", {timeout: 10000});
       const result = await page.evaluate(() => {
@@ -209,6 +212,7 @@ async function getProductHref(url , pageLimit){
       productElements.push(...result);
       console.log("Crawling Page " + i + " / " + pageLimit);
     }
+    console.log(productElements);
 
     await browser.close();
 
