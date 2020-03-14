@@ -1,8 +1,7 @@
 class Laptop{
-    constructor(id,name,release) {
+    constructor(id,name) {
         this.id = id;
         this.name = name;
-        this.release = release;
     }
 }
 

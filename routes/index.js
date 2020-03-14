@@ -3,13 +3,18 @@ var router = express.Router();
 const { getConnection } = require('typeorm');
 const Laptop = require('../schemas/laptopSchem');
 const puppeteer = require('puppeteer');
+
 const Legend = require('../models/legend').Legend;
 const Category = require('../models/category').Category;
+const LaptopDB = require('../models/laptop').Laptop;
+const PriceTransition = require('../models/priceTransition').PriceTransition;
+
 var cron = require('node-cron');
+const moment = require('moment');
 
 cron.schedule('0 0 0 * * *', () => {
   console.log('Cron running : ' + (new Date()).toISOString().replace(/[^0-9]/g, ""));
-  getLegends("http://prod.danawa.com/list/?cate=112758");
+  getLegends("http://prod.danawa.com/list/?cate=112758",100);
 });
 
 let legendCatalog = [];
@@ -26,13 +31,13 @@ router.get ('/', function(req,res,next) {
 router.get ('/crawler', function(req,res,next) {
   console.log('Start Crawling Manually');
   const url = req.query.id;
-  getLegends(url);
+  getLegends(url,100);
   // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
   // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
   res.status(200).json("Test Carwler at " + url);
 });
 
-async function getLegends(url){
+async function getLegends(url,pageLimit){
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
@@ -88,7 +93,7 @@ async function getLegends(url){
 
   await insertLegendCate();
 
-  getProductHref(url,30);
+  getProductHref(url,pageLimit);
 }
 
 async function insertLegendCate(){
@@ -210,11 +215,12 @@ async function getProductHref(url , pageLimit){
     console.log("Crawling done at " + url);
     console.log(productElements.length + "items");
 
-    console.log("Queue crawling start");
+    console.log("%cQueue crawling start","color: green");
     for(i = 0;i < productElements.length;i++){
-        await getSingleProductInfo(productElements[i]);
+      console.log("%c" + "Queue " + (i + 1) + " / " + productElements.length,"color: red");
+      await getSingleProductInfo(productElements[i]);
     }
-    console.log("Queue crawling finished");
+    console.log("%cQueue crawling finished","color: green");
 }
 
 async function getSingleProductInfo(url){
@@ -254,14 +260,73 @@ async function getSingleProductInfo(url){
     });
 
     console.log("Crawling done at " + url);
-    console.log(title,infos, priceRes);
+
+    const tmpArr = [];
+    tmpArr.push(...title);
+    tmpArr.push(...infos);
+    tmpArr.push(...priceRes);
+    await insertProductPrice(tmpArr);
   }catch(e){
       console.log("Crawling failed at " + url);
   }
-
-    await browser.close();
+  await browser.close();
 }
 
+async function insertProductPrice(singleProductInfo){
+  console.log("SingleProduct Inserting start");
+
+  const title = singleProductInfo[0].title;
+  const info = singleProductInfo[1].infos;
+  const price_ = singleProductInfo[2].price;
+  const priceAdress = singleProductInfo[2].url;
+  let cash_ = "";
+  let cashAdress = "";
+  if(singleProductInfo[3] != null){
+    cash_ = singleProductInfo[3].price;
+    cashAdress = singleProductInfo[3].url;
+  }
+
+  let inspectionData = await getConnection()
+    .getRepository(LaptopDB)
+    .createQueryBuilder("laptop")
+    .where("laptop.name = :tmp", { tmp: title })
+    .getOne();
+
+  if(inspectionData == null){
+    await getConnection()
+    .createQueryBuilder()
+    .insert()
+    .into(LaptopDB)
+    .values([
+    { name: title }
+    ])
+    .execute();
+  }
+
+  let laptopID = await getConnection()
+    .getRepository(LaptopDB)
+    .createQueryBuilder("laptop")
+    .where("laptop.name = :tmp", { tmp: title })
+    .select("laptop.id")
+    .getOne();
+  laptopID = parseInt(laptopID.id);
+
+  await getConnection()
+      .createQueryBuilder()
+      .insert()
+      .into(PriceTransition)
+      .values([
+        {
+          laptopId : laptopID,
+          price: price_,
+          cash: cash_,
+          websiteAddress: priceAdress,
+          websiteAddressCash: cashAdress
+        }
+      ])
+      .execute();
+  console.log("Inserting finished");
+}
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

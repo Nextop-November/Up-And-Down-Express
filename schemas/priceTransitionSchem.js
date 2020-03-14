@@ -15,21 +15,29 @@ module.exports = new EntitySchema({
             nullabel: false
         },
         date: {
-            type: 'date',
+            type: 'timestamp',
+            default: () => 'CURRENT_TIMESTAMP',
             nullabel: false
         },
         price: {
-            type: 'bigint',
+            type: 'varchar',
+            length: 50,
             nullabel: false
         },
         cash: {
-            type: 'bigint',
-            nullabel: false
+            type: 'varchar',
+            length: 50,
+            nullabel: true
         },
         websiteAddress: {
             type: 'varchar',
             length: 2000,
             nullabel: false
-        }
+        },
+        websiteAddressCash: {
+            type: 'varchar',
+            length: 2000,
+            nullabel: true
+        },
     }
 })
