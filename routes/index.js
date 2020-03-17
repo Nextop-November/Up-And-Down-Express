@@ -14,7 +14,7 @@ const moment = require('moment');
 
 cron.schedule('0 0 0 * * *', () => {
   console.log('Cron running : ' + (new Date()).toISOString().replace(/[^0-9]/g, ""));
-  getLegends("http://prod.danawa.com/list/?cate=112758",100);
+  getLegends("http://prod.danawa.com/list/?cate=112758",3);
 });
 
 let legendCatalog = [];
@@ -31,7 +31,7 @@ router.get ('/', function(req,res,next) {
 router.get ('/crawler', function(req,res,next) {
   console.log('Start Crawling Manually');
   const url = req.query.id;
-  getLegends(url,100);
+  getLegends(url,3);
   // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
   // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
   res.status(200).json("Test Carwler at " + url);
