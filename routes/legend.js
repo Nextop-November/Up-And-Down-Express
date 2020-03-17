@@ -12,11 +12,11 @@ router.get('/', function(req, res, next) {
         return repository2.find().then((categories)=> { //category list
             const mapResult = legends.map((legend) => { 
                 const filterResult = categories.filter((category) => {
-                    return category.lengedId === legend.id;
+                    return category.legendId === legend.id;
                 });
                 return {
                     id: legend.id,
-                    lable: legends.label,
+                    lable: legend.label,
                     category: filterResult
                 }
             });
