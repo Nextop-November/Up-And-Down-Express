@@ -8,19 +8,19 @@ router.get('/', function(req, res, next) {
     const connection =getConnection();
     const repository1 = connection.getRepository(Legend.options.name);
     const repository2 = connection.getRepository(Category.options.name);
-    repository1.find().then((lengeds) => {
-        return repository2.find().then((categories)=> {
-            return lengeds.map((legned) => {
-                categories.filter((category) => {
-                    return category.lengedId === legned.id;
+    repository1.find().then((legends) => { //legend list
+        return repository2.find().then((categories)=> { //category list
+            const mapResult = legends.map((legend) => { 
+                const filterResult = categories.filter((category) => {
+                    return category.lengedId === legend.id;
                 });
                 return {
-                    id: legned.id,
-                    lable: lengeds.label,
-                    category: category
+                    id: legend.id,
+                    lable: legends.label,
+                    category: filterResult
                 }
-                res.status(200).json(lengeds);
             });
+            res.status(200).json(mapResult)
         });
     });
 });
