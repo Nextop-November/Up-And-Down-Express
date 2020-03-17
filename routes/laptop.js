@@ -29,6 +29,7 @@ router.get('/price', function(req, res, next) {
     res.status(200).json("LaptopID : " + lapId);
 });
 
+//http://localhost:3000/laptops/price?id=12
 async function getPriceTrans(id){
     let priceTrans = [];
 
