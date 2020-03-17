@@ -7,7 +7,7 @@ router.get('/', function(req, res, next) {
     const connection = getConnection();
     const repository = connection.getRepository(Laptop.options.name);
     repository.find().then((result) => {
-        res.status(200).json(reult);
+        res.status(200).json(result);
     });
 });
 
