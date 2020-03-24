@@ -8,11 +8,12 @@ const Legend = require('../models/legend').Legend;
 const Category = require('../models/category').Category;
 const LaptopDB = require('../models/laptop').Laptop;
 const PriceTransition = require('../models/priceTransition').PriceTransition;
+const CategoryMap = require('../models/categoryMap').CategoryMap;
 
 var cron = require('node-cron');
 const moment = require('moment');
 
-cron.schedule('0 0 0 * * *', () => {
+cron.schedule('1 0 0 * * *', () => {
   console.log('Cron running : ' + (new Date()).toISOString().replace(/[^0-9]/g, ""));
   getLegends("http://prod.danawa.com/list/?cate=112758",10);
 });
@@ -31,7 +32,7 @@ router.get ('/', function(req,res,next) {
 router.get ('/crawler', function(req,res,next) {
   console.log('Start Crawling Manually');
   const url = req.query.id;
-  getLegends(url,10);
+  getLegends(url,1);
   // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
   // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
   res.status(200).json("Test Carwler at " + url);
@@ -314,6 +315,42 @@ async function insertProductPrice(singleProductInfo){
     .select("laptop.id")
     .getOne();
   laptopID = parseInt(laptopID.id);
+
+  const splitInfo = info.split("/");
+  for(i = 0;i < splitInfo.length;i++){
+    const tmpInf = splitInfo[i].replace(/\s/g,'').trim();
+    
+    let cateID = await getConnection()
+    .getRepository(Category)
+    .createQueryBuilder("category")
+    .where("category.name = :tmp", { tmp: tmpInf })
+    .select("category.id")
+    .getOne();
+
+    if(cateID == null)
+      continue;
+
+    cateID = parseInt(cateID.id);
+
+    let cateMap = await getConnection()
+      .getRepository(CategoryMap)
+      .createQueryBuilder("CategoryMap")
+      .where("CategoryMap.laptopId = :tmp1 and CategoryMap.categoryId = :tmp2", { tmp1: laptopID, tmp2: cateID})
+      .select("CategoryMap.id")
+      .getOne();
+
+      if(cateMap == null){
+        await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(CategoryMap)
+        .values([
+          { laptopId: laptopID,
+            categoryId: cateID}
+        ])
+        .execute();
+      }
+  }
 
   await getConnection()
       .createQueryBuilder()

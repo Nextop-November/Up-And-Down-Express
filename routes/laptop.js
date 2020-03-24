@@ -2,7 +2,9 @@ var express = require('express');
 var router = express.Router();
 const { getConnection } = require('typeorm');
 const Laptop = require('../schemas/laptopSchem');
+
 const PriceTransition = require('../models/priceTransition').PriceTransition;
+const LaptopDB = require('../models/laptop').Laptop;
 
 router.get('/', function(req, res, next) {
     const connection = getConnection();
@@ -28,8 +30,29 @@ router.get('/price', function(req, res, next) {
 
     res.status(200).json("LaptopID : " + lapId);
 });
-
 //http://localhost:3000/laptops/price?id=12
+
+router.get('/search', function(req, res, next) {
+    const subStr = req.query.name;
+    searchLaptop(subStr);
+
+    res.status(200).json("Search name : " + subStr);
+});
+//http://localhost:3000/laptops/search?name=LG전자
+
+async function searchLaptop(str){
+    //.andWhere()
+    let laptopInfo = await getConnection()
+    .getRepository(LaptopDB)
+    .createQueryBuilder("laptop")
+    .where("laptop.name like :tmp"
+        , { tmp: '%' + str + '%'})
+    .getMany();
+
+    for(i = 0;i < laptopInfo.length;i++)
+        console.log(laptopInfo[i].name);
+}
+
 async function getPriceTrans(id){
     let priceTrans = [];
 
