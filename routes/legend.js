@@ -14,10 +14,13 @@ router.get('/', function(req, res, next) {
                 const filterResult = categories.filter((category) => {
                     return category.legendId === legend.id;
                 });
+                let tmpResult = [];
+                for(i = 0;i < filterResult.length;i++)
+                    tmpResult.push(filterResult[i].name);
                 return {
-                    id: legend.id,
-                    lable: legend.label,
-                    category: filterResult
+                    //id: legend.id,
+                    name: legend.label,
+                    options: tmpResult
                 }
             });
             res.status(200).json(mapResult)
