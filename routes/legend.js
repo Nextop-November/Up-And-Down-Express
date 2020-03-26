@@ -16,7 +16,7 @@ router.get('/', function(req, res, next) {
                 });
                 let tmpResult = [];
                 for(i = 0;i < filterResult.length;i++)
-                    tmpResult.push(filterResult[i].name);
+                    tmpResult.push(filterResult[i].name); 
                 return {
                     //id: legend.id,
                     name: legend.label,
