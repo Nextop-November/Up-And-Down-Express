@@ -15,7 +15,7 @@ const moment = require('moment');
 
 cron.schedule('1 0 0 * * *', () => {
   console.log('Cron running : ' + (new Date()).toISOString().replace(/[^0-9]/g, ""));
-  getLegends("http://prod.danawa.com/list/?cate=112758",10);
+  getLegends("http://prod.danawa.com/list/?cate=1724561",10);
 });
 
 let legendCatalog = [];
@@ -32,9 +32,9 @@ router.get ('/', function(req,res,next) {
 router.get ('/crawler', function(req,res,next) {
   console.log('Start Crawling Manually');
   const url = req.query.id;
-  getLegends(url,1);
+  getLegends(url,10);
   // 노트북 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=112758
-  // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561&logger_kw=ca_main_more
+  // 마스크 : http://localhost:3000/crawler?id=http://prod.danawa.com/list/?cate=1724561
   res.status(200).json("Test Carwler at " + url);
 });
 
@@ -44,10 +44,10 @@ async function getLegends(url,pageLimit){
 
   await page.goto(url);
 
-  await page.waitForSelector(".btn_all_opt", {timeout: 10000});
-  await page.click('.btn_all_opt');
+  //await page.waitForSelector(".btn_all_opt", {timeout: 10000});
+  //await page.click('.btn_all_opt');
 
-  await sleep(1000);
+  //await sleep(1000);
 
   await page.waitForSelector("dl.spec_item", {timeout: 10000});
   const result = await page.evaluate(() => {
